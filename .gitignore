@@ -1,0 +1,21 @@
+# Bases de datos y archivos Excel (CRÍTICO PARA SEGURIDAD DE DATOS POLICIALES)
+*.xlsx
+*.xls
+*.csv
+*.tsv
+*.ods
+*.zip
+*.rar
+
+# Entornos de Python y Caché
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+.streamlit/
+
+# SO Locales
+.DS_Store
+Thumbs.db
