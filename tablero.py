@@ -91,8 +91,16 @@ if archivo_subido is not None:
                 registrar_error(es_vacio(df[col]), msg, col)
 
         if "TIPO DE INTERVENCION POLICIAL" in df.columns:
-            mask = df["TIPO DE INTERVENCION POLICIAL"].astype(str).str.strip().str.upper() == "OTRA"
-            registrar_error(mask, "Intervención es 'OTRA'", "TIPO DE INTERVENCION POLICIAL")
+            intervencion = df["TIPO DE INTERVENCION POLICIAL"].astype(str).str.strip().str.upper()
+            mask_otra = intervencion == "OTRA"
+            registrar_error(mask_otra, "Intervención es 'OTRA'", "TIPO DE INTERVENCION POLICIAL")
+            
+            # Nueva Regla: Evaluaciones Periciales no debe tener incautación
+            mask_pericial = (intervencion == "EVALUACIONES PERICIALES")
+            # Buscamos si hay algo de incautación (basado en la posterior validación de drogas o incautacion general)
+            if "INCAUTACION" in df.columns:
+                mask_incaut_pos = ~es_vacio(df["INCAUTACION"]) & ~df["INCAUTACION"].astype(str).str.strip().str.upper().isin(["NO", "N/A", "0"])
+                registrar_error(mask_pericial & mask_incaut_pos, "Evaluaciones Periciales no debería tener Elementos Secuestrados", "INCAUTACION")
 
         if "FECHA" in df.columns:
             mask_ok = df["FECHA"].astype(str).str.strip().str.match(r"^\d{4}-\d{2}-\d{2}$")
@@ -128,6 +136,16 @@ if archivo_subido is not None:
                 # Chequea si el texto contiene la palabra HOMBRE o MUJER en cualquier parte
                 mask = val.str.contains("HOMBRE|MUJER", na=False, regex=True)
                 registrar_error(mask, "Género: usar MASCULINO o FEMENINO", col_gen)
+
+        # Nueva Regla: LP 1111 Alert
+        if "LP" in df.columns:
+            mask_lp = df["LP"].astype(str).str.strip() == "1111"
+            registrar_error(mask_lp, "Alerta: Verificando Legajo 1111", "LP")
+
+        # Nueva Regla: Captura Revisar Causa
+        if "DELITO NRO. 1" in df.columns:
+            mask_captura = df["DELITO NRO. 1"].astype(str).str.strip().str.upper() == "CAPTURA"
+            registrar_error(mask_captura, "REVISAR CAUSA!", "DELITO NRO. 1")
 
         # -------------------------------------------------------------------
         # NUEVAS REGLAS CRUZADAS Y TEMPORALES DE PARTE OPERATIVO
@@ -188,6 +206,10 @@ if archivo_subido is not None:
 
             # Máscara de control: ignoramos por completo si el campo droga dice literalmente "-" o está vacío
             mask_droga_valida = (tipo != "-") & (~tipo.isin(["", "NAN", "NULL", "NONE"]))
+
+            # Nueva Regla: Fármacos alert
+            mask_farmaco = tipo.str.contains("FÁRMACO|FARMACO", na=False)
+            registrar_droga(mask_droga_valida & mask_farmaco, "Alerta: Fármaco detectado como droga", c_droga)
 
             # 1. Ningun tipo de droga puede tener cantidad 0 (solo si la droga es válida)
             registrar_droga(mask_droga_valida & (cant == 0), "Alerta: Cantidad es 0", c_cant)
