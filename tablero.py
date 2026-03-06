@@ -143,9 +143,10 @@ if archivo_subido is not None:
             registrar_error(mask_lp, "Alerta: Verificando Legajo 1111", "LP")
 
         # Nueva Regla: Captura Revisar Causa
-        if "DELITO NRO. 1" in df.columns:
-            mask_captura = df["DELITO NRO. 1"].astype(str).str.strip().str.upper() == "CAPTURA"
-            registrar_error(mask_captura, "REVISAR CAUSA!", "DELITO NRO. 1")
+        if "DELITO NRO. 1" in df.columns and "CAUSA" in df.columns:
+            mask_captura = (df["DELITO NRO. 1"].astype(str).str.strip().str.upper() == "CAPTURA") & \
+                           (df["CAUSA"].astype(str).str.strip() == "-")
+            registrar_error(mask_captura, "REVISAR CAUSA! (Captura sin causa detallada)", "DELITO NRO. 1")
 
         # -------------------------------------------------------------------
         # NUEVAS REGLAS CRUZADAS Y TEMPORALES DE PARTE OPERATIVO
