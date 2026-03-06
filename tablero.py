@@ -147,6 +147,23 @@ if archivo_subido is not None:
             mask_captura = (df["DELITO NRO. 1"].astype(str).str.strip().str.upper() == "CAPTURA") & \
                            (df["CAUSA"].astype(str).str.strip() == "-")
             registrar_error(mask_captura, "REVISAR CAUSA! (Captura sin causa detallada)", "DELITO NRO. 1")
+        
+        # Nueva Regla: Elementos mal clasificados (Drogas, Armas, Municiones en campos generales)
+        if "INCAUTACION" in df.columns:
+            val_incaut = df["INCAUTACION"].astype(str).str.strip().str.upper()
+            
+            # Keywords
+            patron_drogas = r"DROGA|COCAINA|MARIHUANA|PORRO|FÁRMACO|FARMACO|EXTASIS|KETAMINA|LSD|PASTA BASE"
+            patron_armas = r"ARMA|PISTOLA|REVOLVER|ESCOPETA|FUSIL|CARABINA"
+            patron_muni = r"MUNICIÓN|MUNICION|PROYECTIL|BALA|CARTUCHO|VAINA"
+            
+            mask_droga_gen = val_incaut.str.contains(patron_drogas, na=False, regex=True)
+            mask_arma_gen = val_incaut.str.contains(patron_armas, na=False, regex=True)
+            mask_muni_gen = val_incaut.str.contains(patron_muni, na=False, regex=True)
+            
+            registrar_error(mask_droga_gen, "Elemento DROGA en campo general: Usar clasificación específica", "INCAUTACION")
+            registrar_error(mask_arma_gen, "Elemento ARMA en campo general: Usar clasificación específica", "INCAUTACION")
+            registrar_error(mask_muni_gen, "Elemento MUNICIÓN en campo general: Usar clasificación específica", "INCAUTACION")
 
         # -------------------------------------------------------------------
         # NUEVAS REGLAS CRUZADAS Y TEMPORALES DE PARTE OPERATIVO
